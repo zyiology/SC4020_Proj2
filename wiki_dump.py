@@ -155,12 +155,12 @@ def process_pages(byte_string_compressed: bytes):
     Args:
         byte_string_compressed (bytes): Byte string of the bz2 compressed XML data.
 
-    Yields:
-        dict: Dictionary object with 'id', 'title', and 'text' of processed pages.
     """
     bz2d = bz2.BZ2Decompressor()
     byte_string = bz2d.decompress(byte_string_compressed)
     doc = etree.parse(io.BytesIO(b'<root>' + byte_string + b'</root>'))
+
+    df = pd.DataFrame(index=['id', 'title', 'text'])
 
     for page in doc.xpath('/root/page'):
         title_elem = page.find('title')
@@ -179,7 +179,7 @@ def process_pages(byte_string_compressed: bytes):
             page_id = id_elem.text
             raw_text = text_elem[0].text if text_elem[0].text is not None else ''
             clean_text = dewiki(raw_text)
-            yield {'id': page_id, 'title': title_text, 'text': clean_text}
+            yield clean_text#{'id': page_id, 'title': title_text, 'text': clean_text}
 
 
 def get_articles(byte_string_compressed: bytes) -> pd.DataFrame:
@@ -221,6 +221,16 @@ def get_articles(byte_string_compressed: bytes) -> pd.DataFrame:
     #                   index=['index', 'title', 'article']).T
     # df['index'] = df['index'].astype(np.int32)
     # return df
+
+
+def get_unique_words(text, dictionary):
+    text = re.sub(r'[^\w\s]', '', text)  # remove punctuation
+    article_words = re.findall(r'\w+', text.lower())  # convert to lowercase and split
+    unique_words = set(article_words)  # get unique words
+
+    filtered_words = unique_words.intersection(dictionary)
+
+    return list(filtered_words)
 
 
 if __name__ == "__main__":
