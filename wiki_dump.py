@@ -8,6 +8,8 @@ from collections.abc import Generator
 import os
 from lxml import etree
 from tqdm import tqdm
+import wikitextparser as wtp
+from html import unescape as htt
 
 import numpy as np
 import pandas as pd
@@ -139,6 +141,47 @@ def get_bz2_byte_str(path_articles: str,
             yield f.read(offset)
 
 
+def dewiki(text):
+    text = wtp.parse(text).plain_text()  # wiki to plaintext
+    text = htt(text)  # remove any HTML
+    text = text.replace('\\n', ' ')  # replace newlines
+    text = re.sub(r'\s+', ' ', text)  # replace excess whitespace
+    return text
+
+
+def process_pages(byte_string_compressed: bytes):
+    """Process pages from a bz2 compressed Wikimedia dump.
+
+    Args:
+        byte_string_compressed (bytes): Byte string of the bz2 compressed XML data.
+
+    Yields:
+        dict: Dictionary object with 'id', 'title', and 'text' of processed pages.
+    """
+    bz2d = bz2.BZ2Decompressor()
+    byte_string = bz2d.decompress(byte_string_compressed)
+    doc = etree.parse(io.BytesIO(b'<root>' + byte_string + b'</root>'))
+
+    for page in doc.xpath('/root/page'):
+        title_elem = page.find('title')
+        redirect = page.find('redirect')
+        id_elem = page.find('id')
+        text_elem = page.xpath('.//revision/text')
+
+        if redirect is not None:
+            continue  # Skip redirect pages
+        if title_elem is not None:
+            title_text = title_elem.text
+            if "(disambiguation)" in title_text or ":" in title_text:
+                continue  # Skip disambiguation or namespaced pages
+
+        if text_elem and id_elem is not None:
+            page_id = id_elem.text
+            raw_text = text_elem[0].text if text_elem[0].text is not None else ''
+            clean_text = dewiki(raw_text)
+            yield {'id': page_id, 'title': title_text, 'text': clean_text}
+
+
 def get_articles(byte_string_compressed: bytes) -> pd.DataFrame:
     """Get a dataframe containing the set of articles from a bz2
 
@@ -161,14 +204,23 @@ def get_articles(byte_string_compressed: bytes) -> pd.DataFrame:
     byte_string = bz2d.decompress(byte_string_compressed)
     doc = etree.parse(io.BytesIO(b'<root> ' + byte_string + b' </root>'))
 
-    col_id = _get_id(doc.xpath('*/id'))
-    col_title = _get_text(doc.xpath('*/title'))
-    col_article = _get_text(doc.xpath('*/revision/text'))
-
-    df = pd.DataFrame([col_id, col_title, col_article],
-                      index=['index', 'title', 'article']).T
-    df['index'] = df['index'].astype(np.int32)
-    return df
+    # col_id = _get_id(doc.xpath('*/id'))
+    # col_title = _get_text(doc.xpath('*/title'))
+    # col_article = _get_text(doc.xpath('*/revision/text'))
+    #
+    # print_raw_xml = True
+    # # If requested, print the raw XML of the first article
+    # if print_raw_xml:
+    #     #page_elements = doc.xpath('//p')
+    #     if doc:
+    #         print(etree.tostring(doc, pretty_print=True).decode('utf-8'))
+    #     else:
+    #         print("No page elements found.")
+    #
+    # df = pd.DataFrame([col_id, col_title, col_article],
+    #                   index=['index', 'title', 'article']).T
+    # df['index'] = df['index'].astype(np.int32)
+    # return df
 
 
 if __name__ == "__main__":
