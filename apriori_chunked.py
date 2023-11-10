@@ -4,18 +4,20 @@ import multiprocessing
 import dask.bag as db
 from dask.distributed import Client
 from nltk.corpus import words
+from nltk.corpus import stopwords
 import numpy as np
 from collections import defaultdict
 
 
 def apriori_disk(data_file, min_support_percent):
     #item_sets = frozenset(set(words.words()))
+    stop_words = set(stopwords.words('english'))
 
     with open(data_file, 'r') as f:
         row_count = sum(1 for row in f)
         min_support = int(row_count*min_support_percent)
 
-    item_sets = {frozenset([item]) for item in words.words()}
+    item_sets = {frozenset([item]) for item in words.words() if item not in stop_words}
 
     freq_itemsets = freq_new_level = get_frequent_item_sets_alt(data_file, item_sets, min_support)
     k = 1
