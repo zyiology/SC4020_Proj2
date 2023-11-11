@@ -9,7 +9,7 @@ import numpy as np
 from collections import defaultdict
 
 
-def apriori_disk(data_file, min_support_percent):
+def apriori_disk(data_file, min_support_percent, blocksize):
     #item_sets = frozenset(set(words.words()))
     stop_words = set(stopwords.words('english'))
 
@@ -19,16 +19,17 @@ def apriori_disk(data_file, min_support_percent):
 
     item_sets = {frozenset([item]) for item in words.words() if item not in stop_words}
 
-    freq_itemsets = freq_new_level = get_frequent_item_sets_alt(data_file, item_sets, min_support)
+    freq_itemsets = freq_new_level = get_frequent_item_sets_alt(data_file, item_sets, min_support, blocksize)
     k = 1
 
     while True:
-        if k>2: break
         k += 1
+        if k>4: break
+
         candidates = generate_candidate_itemsets(freq_new_level)
         pruned_candidates = prune_candidates(candidates, freq_itemsets)
 
-        freq_new_level = get_frequent_item_sets(data_file, pruned_candidates, min_support)
+        freq_new_level = get_frequent_item_sets(data_file, pruned_candidates, min_support, blocksize)
 
         if not freq_new_level:
             break
@@ -71,9 +72,9 @@ def count_itemsets_in_line_alt(line, item_sets):
     return item_count
 
 
-def get_frequent_item_sets_alt(data_file, item_sets, min_support):
+def get_frequent_item_sets_alt(data_file, item_sets, min_support, blocksize):
 
-    text = db.read_text(data_file, blocksize="100MB")
+    text = db.read_text(data_file, blocksize=blocksize)
 
     results = text.map(count_itemsets_in_line_alt, item_sets).fold(combine_counts).compute()
 
@@ -82,10 +83,9 @@ def get_frequent_item_sets_alt(data_file, item_sets, min_support):
     return filtered_item_sets
 
 
+def get_frequent_item_sets(data_file, item_sets, min_support, blocksize):
 
-def get_frequent_item_sets(data_file, item_sets, min_support):
-
-    text = db.read_text(data_file, blocksize="100MB")
+    text = db.read_text(data_file, blocksize=blocksize)
 
     results = text.map(count_itemsets_in_line, item_sets).fold(combine_counts).compute()
 
@@ -216,4 +216,4 @@ if __name__ == "__main__":
 
     #apriori_disk('data/combined.csv', 1)
     #apriori_disk('data/output_5.csv',0.3)
-    apriori_disk('data/articles_items.csv_worker_0.csv',0.5)
+    apriori_disk('data/test_stem.csv',0.2, "2MB")

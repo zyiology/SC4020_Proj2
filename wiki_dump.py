@@ -10,6 +10,7 @@ from lxml import etree
 from tqdm import tqdm
 import wikitextparser as wtp
 from html import unescape as htt
+from memory_profiler import profile
 
 import numpy as np
 import pandas as pd
@@ -149,7 +150,7 @@ def dewiki(text):
     return text
 
 
-def process_pages(byte_string_compressed: bytes):
+def process_pages(byte_string_compressed: bytes) -> Generator[str, None, None]:
     """Process pages from a bz2 compressed Wikimedia dump.
 
     Args:
@@ -158,9 +159,41 @@ def process_pages(byte_string_compressed: bytes):
     """
     bz2d = bz2.BZ2Decompressor()
     byte_string = bz2d.decompress(byte_string_compressed)
-    doc = etree.parse(io.BytesIO(b'<root>' + byte_string + b'</root>'))
+    #context = etree.iterparse(io.BytesIO(b'<root>' + byte_string + b'</root>'), events=('end',), tag='/root/page')
 
-    df = pd.DataFrame(index=['id', 'title', 'text'])
+    # for event, elem in context:
+    #     title_elem = elem.find('title')
+    #     redirect = elem.find('redirect')
+    #     id_elem = elem.find('id')
+    #     text_elem = elem.find('.//revision/text')
+    #
+    #     if redirect is not None:
+    #         elem.clear()  # Clear memory for this element
+    #         continue  # Skip redirect pages
+    #
+    #     if title_elem is not None:
+    #         title_text = title_elem.text
+    #         if "(disambiguation)" in title_text or ":" in title_text:
+    #             elem.clear()  # Clear memory for this element
+    #             continue  # Skip disambiguation or namespaced pages
+    #
+    #     if text_elem is not None and id_elem is not None:
+    #         #page_id = id_elem.text
+    #         raw_text = text_elem.text if text_elem.text is not None else ''
+    #         clean_text = dewiki(raw_text)
+    #         yield clean_text  # {'id': page_id, 'title': title_text, 'text': clean_text}
+    #
+    #     # Clear processed elements to free memory
+    #     elem.clear()
+    #     # Also clear previous siblings (they are not needed anymore)
+    #     while elem.getprevious() is not None:
+    #         del elem.getparent()[0]
+    #
+    # del context  # Explicitly delete the context to free memory
+
+    #df = pd.DataFrame(index=['id', 'title', 'text'])
+
+    doc = etree.parse(io.BytesIO(b'<root>' + byte_string + b'</root>'))
 
     for page in doc.xpath('/root/page'):
         title_elem = page.find('title')
@@ -222,6 +255,20 @@ def get_articles(byte_string_compressed: bytes) -> pd.DataFrame:
     # df['index'] = df['index'].astype(np.int32)
     # return df
 
+from nltk.stem import PorterStemmer
+porter_stemmer = PorterStemmer()
+
+
+def get_unique_stemmed_words(text, dictionary):
+    text = re.sub(r'[^\w\s]', '', text)  # remove punctuation
+    article_words = re.findall(r'\w+', text.lower())  # convert to lowercase and split
+    unique_words = set(article_words)  # get unique words
+    stemmed_unique_words = {porter_stemmer.stem(word) for word in unique_words}
+
+    filtered_words = stemmed_unique_words.intersection(dictionary)
+
+    return list(filtered_words)
+
 
 def get_unique_words(text, dictionary):
     text = re.sub(r'[^\w\s]', '', text)  # remove punctuation
@@ -231,6 +278,7 @@ def get_unique_words(text, dictionary):
     filtered_words = unique_words.intersection(dictionary)
 
     return list(filtered_words)
+
 
 
 if __name__ == "__main__":
