@@ -148,32 +148,38 @@ def main_dask():
 
     output_csv_path_template = 'data/batch/output_v2_{}.csv'
     offsets = list(wiki_dump.get_page_offsets(index_file_path, offsets_file_path))
-    offset_chunks = list(chunked_offsets(offsets, len(offsets)//6 + 1))
+    # offset_chunks = list(chunked_offsets(offsets, len(offsets)//5 + 1))
+    # split_first_chunk = list(chunked_offsets(offset_chunks[0], len(offset_chunks[0])//2 + 1))
+    # del offset_chunks[0]
+    # offset_chunks.extend(split_first_chunk)
+    offset_chunks = split_list_into_n_with_equal_range(offsets, 6)
     filenames = [output_csv_path_template.format(i) for i in range(len(offset_chunks))]
 
-    def submit_task(i):
-        if i < len(offset_chunks):
-            return client.submit(worker_process_dask, offset_chunks[i], filenames[i])
-        return None
+    # def submit_task(i):
+    #     if i < len(offset_chunks):
+    #         return client.submit(worker_process_dask, offset_chunks[i], filenames[i])
+    #     return None
+    #
+    # # List to store futures
+    # futures = []
+    #
+    # # Submit initial batch of tasks
+    # for i in range(6):  # Assuming 6 workers
+    #     future = submit_task(i)
+    #     if future is not None:
+    #         futures.append(future)
 
-    # List to store futures
-    futures = []
 
-    # Submit initial batch of tasks
-    for i in range(6):  # Assuming 6 workers
-        future = submit_task(i)
-        if future is not None:
-            futures.append(future)
 
-    # Process tasks as they complete
-    for future in as_completed(futures):
-        i += 1  # Increment index
-        new_future = submit_task(i)
-        if new_future is not None:
-            futures.append(new_future)
+    # # Process tasks as they complete
+    # for future in as_completed(futures):
+    #     i += 1  # Increment index
+    #     new_future = submit_task(i)
+    #     if new_future is not None:
+    #         futures.append(new_future)
 
-    # results = client.map(worker_process_dask, offset_chunks, filenames)
-    # client.gather(results)
+    results = client.map(worker_process_dask, offset_chunks, filenames)
+    client.gather(results)
 
     #print(len(offsets))
     #print(sum([1 for _ in offset_chunks]))
@@ -193,6 +199,34 @@ def main_dask():
     #results = dask.compute(*futures)
 
     return
+
+
+def split_list_into_n_with_equal_range(lst, n):
+    if not lst or n <= 0:
+        return []
+
+    # Calculate the total range of the list and target range for each sublist
+    total_range = lst[-1] - lst[0]
+    target_range = total_range / n
+
+    # Initialize variables for splitting the list
+    sublists = []
+    start_index = 0
+
+    for _ in range(n):
+        # Find the end index for the current sublist
+        end_index = start_index
+        while end_index < len(lst) - 1 and (lst[end_index] - lst[start_index]) < target_range:
+            end_index += 1
+
+        # Append the sublist, including the overlapping element
+        sublists.append(lst[start_index:end_index + 1])
+
+        # Update the start index for the next sublist
+        start_index = end_index
+
+    return sublists
+
 
 
 def worker_process_dask_bag(input):
