@@ -26,21 +26,30 @@ import numpy as np
 #
 # print(list(chunked_offsets([0,1,2,3,4,5,6,7,8,9,10], 3)))
 
-import pandas as pd
-import os
+# import pandas as pd
+# import os
+#
+# directory = 'data/'
+# file_list = []
+#
+# for filename in os.listdir(directory):
+#     if filename.endswith(".csv") and filename.startswith("output_"):
+#         file_list.append(os.path.join(directory, filename))
+#
+# combined_data = pd.DataFrame()
+#
+# for file in file_list:
+#     df = pd.read_csv(file)
+#     combined_data = combined_data.append(df, ignore_index=True)
+#
+# combined_data.to_csv('combined_data.csv', index=False)
 
-directory = 'data/'
-file_list = []
+combined_data = 'data/combined.csv'
+pruned = 'data/pruned.csv'
 
-for filename in os.listdir(directory):
-    if filename.endswith(".csv") and filename.startswith("output_"):
-        file_list.append(os.path.join(directory, filename))
-
-combined_data = pd.DataFrame()
-
-for file in file_list:
-    df = pd.read_csv(file)
-    combined_data = combined_data.append(df, ignore_index=True)
-
-combined_data.to_csv('combined_data.csv', index=False)
-
+with open(combined_data, 'r') as f:
+    with open(pruned, 'w') as f2:
+        for i,row in enumerate(f):
+            f2.write(row)
+            if i>25:
+                break
