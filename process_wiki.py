@@ -155,6 +155,9 @@ def main_dask():
     offset_chunks = split_list_into_n_with_equal_range(offsets, 6)
     filenames = [output_csv_path_template.format(i) for i in range(len(offset_chunks))]
 
+    results = client.map(worker_process_dask, offset_chunks, filenames)
+    client.gather(results)
+
     # def submit_task(i):
     #     if i < len(offset_chunks):
     #         return client.submit(worker_process_dask, offset_chunks[i], filenames[i])
@@ -178,8 +181,6 @@ def main_dask():
     #     if new_future is not None:
     #         futures.append(new_future)
 
-    results = client.map(worker_process_dask, offset_chunks, filenames)
-    client.gather(results)
 
     #print(len(offsets))
     #print(sum([1 for _ in offset_chunks]))
