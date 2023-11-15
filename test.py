@@ -51,5 +51,5 @@ with open(combined_data, 'r') as f:
     with open(pruned, 'w') as f2:
         for i,row in enumerate(f):
             f2.write(row)
-            if i>25:
+            if i>250:
                 break

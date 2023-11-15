@@ -1,5 +1,5 @@
-import dask
-#from nltk.corpus import stopwords, words
+import dask.distributed
+from nltk.corpus import stopwords, words
 import dask.bag as db
 from collections import defaultdict
 
@@ -11,10 +11,6 @@ def apriori_disk(data_file, exclude, min_support_percent, blocksize):
 
     freq_itemsets = freq_new_level = get_frequent_item_sets_first_pass(data_file, exclude, min_support, blocksize)
     k = 1
-
-    if True:
-        print(freq_itemsets)
-        return
 
     while True:
         k += 1
@@ -109,3 +105,11 @@ def count_itemsets_in_line(line, item_sets):
 
     return item_count
 
+
+if __name__ == "__main__":
+    client = dask.distributed.Client(n_workers=6, threads_per_worker=2)  # Adjust based on your CPU
+    exclude = set(stopwords.words('english'))
+
+    #apriori_disk('data/combined.csv', 1)
+    #apriori_disk('data/output_5.csv',0.3)
+    apriori_disk('data/pruned.csv', exclude, 0.2, "0.2MB")

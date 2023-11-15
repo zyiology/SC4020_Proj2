@@ -113,7 +113,7 @@ def worker_process_dask(chunk, output_csv):
             #print("looking at stream")
             for page in wiki_dump.process_pages(stream):
                 #print('looking at page')
-                unique_words = wiki_dump.get_unique_stemmed_words(text=page, dictionary=english_words_without_stops)
+                unique_words = wiki_dump.get_unique_stemmed_words(text=page, dictionary=english_words)
                 csvwriter.writerow(unique_words)
                 #print('row written')
                 del page
