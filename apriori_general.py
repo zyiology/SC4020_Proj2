@@ -2,19 +2,22 @@ import dask.distributed
 from nltk.corpus import stopwords, words
 import dask.bag as db
 from collections import defaultdict
+import numpy as np
+import pickle
 
 
 def apriori_disk(data_file, exclude, min_support_percent, blocksize):
     with open(data_file, 'r') as f:
         row_count = sum(1 for row in f)
         min_support = int(row_count * min_support_percent)
+        print("no rows: ", row_count)
 
     freq_itemsets = freq_new_level = get_frequent_item_sets_first_pass(data_file, exclude, min_support, blocksize)
     k = 1
 
     while True:
         k += 1
-        if k > 4: break
+        if k > 2: break
 
         candidates = generate_candidate_itemsets(freq_new_level)
         pruned_candidates = prune_candidates(candidates, freq_itemsets)
@@ -27,9 +30,7 @@ def apriori_disk(data_file, exclude, min_support_percent, blocksize):
         freq_itemsets.update(freq_new_level)
         print(f"Frequent Itemsets Level {k} completed")
 
-    print(freq_itemsets)
-
-    return
+    return freq_itemsets
 
 
 # uses alternate function to count itemsets in line, because makes first pass of dataset
@@ -106,10 +107,40 @@ def count_itemsets_in_line(line, item_sets):
     return item_count
 
 
+def check_itemsets(data_file, itemsets, blocksize):
+    text = db.read_text(data_file, blocksize=blocksize)
+
+    results = text.map(check_itemsets_in_line, itemsets).compute()
+
+    return results
+
+
+def check_itemsets_in_line(line, itemsets):
+    line_set = set(line.split(','))
+    itemsets_present = np.zeros(len(itemsets))
+
+    for i, itemset in enumerate(itemsets):
+        if itemset.issubset(line_set):
+            itemsets_present[i] = 1
+
+    return itemsets_present
+
+
 if __name__ == "__main__":
     client = dask.distributed.Client(n_workers=6, threads_per_worker=2)  # Adjust based on your CPU
-    exclude = set(stopwords.words('english'))
+    stopwords_set = set(stopwords.words('english'))
 
     #apriori_disk('data/combined.csv', 1)
     #apriori_disk('data/output_5.csv',0.3)
-    apriori_disk('data/pruned.csv', exclude, 0.2, "0.2MB")
+    frequent_itemsets = apriori_disk('data/pruned.csv', stopwords_set, 0.6, "200KB")
+    freq_list = list(frequent_itemsets.keys())
+    with open('data/frequent_itemsets.pkl', 'wb') as f:
+        pickle.dump(frequent_itemsets, f)
+
+    #worried that this variable is actually too big, maybe I need to save it to .txt line by line instead
+    itemset_features = check_itemsets('data/pruned.csv', freq_list, "200KB")
+    print(itemset_features)
+    print(type(itemset_features))
+    print(itemset_features.__sizeof__())
+    with open('data/itemset_features.pkl', 'wb') as f:
+        pickle.dump(itemset_features, f)
