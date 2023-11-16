@@ -211,9 +211,3 @@ def apriori_chunked(data_chunks, min_support):
     return frequent_itemsets
 
 
-if __name__ == "__main__":
-    client = Client(n_workers=6, threads_per_worker=2)  # Adjust based on your CPU
-
-    #apriori_disk('data/combined.csv', 1)
-    #apriori_disk('data/output_5.csv',0.3)
-    apriori_disk('data/test_stem.csv',0.2, "2MB")
