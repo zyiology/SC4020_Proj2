@@ -1,10 +1,11 @@
+import os
 import dask.distributed
 from nltk.corpus import stopwords, words
 import dask.bag as db
 from collections import defaultdict
 import numpy as np
 import pickle
-
+import datetime
 
 # main function to execute disk-based apriori algorithm
 # data_file: text file, where each line is a transaction and each item is comma-separated
@@ -146,15 +147,21 @@ if __name__ == "__main__":
 
     #apriori_disk('data/combined.csv', 1)
     #apriori_disk('data/output_5.csv',0.3)
-    frequent_itemsets = apriori_disk('data/pruned.csv', stopwords_set, 0.6, "200KB")
+    frequent_itemsets = apriori_disk('data/combined_stemmed.csv', stopwords_set, 0.4, "100MB")
     freq_list = list(frequent_itemsets.keys())
     with open('data/frequent_itemsets.pkl', 'wb') as f:
         pickle.dump(frequent_itemsets, f)
 
     #worried that this variable is actually too big, maybe I need to save it to .txt line by line instead
-    itemset_features = check_itemsets('data/pruned.csv', freq_list, "200KB")
-    print(itemset_features)
-    print(type(itemset_features))
-    print(itemset_features.__sizeof__())
+    itemset_features = check_itemsets('data/combined_stemmed.csv', freq_list, "100MB")
+    #print(itemset_features)
+    #print(type(itemset_features))
+    #print(itemset_features.__sizeof__())
     with open('data/itemset_features.pkl', 'wb') as f:
         pickle.dump(itemset_features, f)
+
+    with open('log.txt', 'w') as f:
+        now = datetime.datetime.now()
+        f.write(now.strftime("%Y-%m-%d %H:%M:%S"))
+
+    os.system('shutdown -s -t 0')
