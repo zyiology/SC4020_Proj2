@@ -6,35 +6,47 @@ import numpy as np
 import pickle
 
 
+# main function to execute disk-based apriori algorithm
+# data_file: text file, where each line is a transaction and each item is comma-separated
+# exclude: set of items (strings) to exclude
+# min_support_percent: from 0 to 1, what % of support is required
+# blocksize: text file will be broken into chunks to process, this determines size of chunk
 def apriori_disk(data_file, exclude, min_support_percent, blocksize):
+
+    # count the number of rows needed to fulfil the min_support_percent
     with open(data_file, 'r') as f:
         row_count = sum(1 for row in f)
         min_support = int(row_count * min_support_percent)
         print("no rows: ", row_count)
 
+    # do the first pass of the dataset to obtain the first set of frequent itemsets
+    # overall set will be stored in freq_itemsets, freq_new_level only temporary
     freq_itemsets = freq_new_level = get_frequent_item_sets_first_pass(data_file, exclude, min_support, blocksize)
-    k = 1
+    k = 1  # current length of itemsets to check for
 
+    # iteratively mine for frequent itemsets
     while True:
         k += 1
-        if k > 2: break
+        if k > 2:
+            break
 
         candidates = generate_candidate_itemsets(freq_new_level)
         pruned_candidates = prune_candidates(candidates, freq_itemsets)
 
         freq_new_level = get_frequent_item_sets(data_file, pruned_candidates, min_support, blocksize)
 
+        # if no new frequent itemsets at this level, stop mining
         if not freq_new_level:
             break
 
+        # add new frequent itemsets to overall set
         freq_itemsets.update(freq_new_level)
         print(f"Frequent Itemsets Level {k} completed")
 
     return freq_itemsets
 
 
-# uses alternate function to count itemsets in line, because makes first pass of dataset
-# more efficient
+# uses alternate function to count itemsets to account for stuff to exclude
 def get_frequent_item_sets_first_pass(data_file, exclude, min_support, blocksize):
     text = db.read_text(data_file, blocksize=blocksize)
 
@@ -44,7 +56,7 @@ def get_frequent_item_sets_first_pass(data_file, exclude, min_support, blocksize
 
     return filtered_item_sets
 
-
+# counts the itemsets present in the given line
 def count_itemsets_in_line_first_pass(line, exclude):
     item_count = defaultdict(int)
 
@@ -63,6 +75,23 @@ def get_frequent_item_sets(data_file, item_sets, min_support, blocksize):
     filtered_item_sets = {frozenset(key): value for key, value in results.items() if value > min_support}
 
     return filtered_item_sets
+
+
+def combine_counts(count1, count2):
+    for key, value in count2.items():
+        count1[key] += value
+    return count1
+
+
+def count_itemsets_in_line(line, item_sets):
+    item_count = defaultdict(int)
+
+    line_set = set(line.split(','))
+    for item in item_sets:
+        if item.issubset(line_set):
+            item_count[item] += 1  # in here, item is a frozenset
+
+    return item_count
 
 
 def generate_candidate_itemsets(freq_itemsets):
@@ -90,23 +119,8 @@ def prune_candidates(candidates, freq_itemsets):
     return pruned_candidates
 
 
-def combine_counts(count1, count2):
-    for key, value in count2.items():
-        count1[key] += value
-    return count1
-
-
-def count_itemsets_in_line(line, item_sets):
-    item_count = defaultdict(int)
-
-    line_set = set(line.split(','))
-    for item in item_sets:
-        if item.issubset(line_set):
-            item_count[item] += 1  # in here, item is a frozenset
-
-    return item_count
-
-
+# used after all frequent itemsets have been obtained, find which frequent itemsets each line possesses
+# and save into a vector - all vectors stored in an overall list
 def check_itemsets(data_file, itemsets, blocksize):
     text = db.read_text(data_file, blocksize=blocksize)
 
