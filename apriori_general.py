@@ -28,8 +28,6 @@ def apriori_disk(data_file, exclude, min_support_percent, blocksize):
     # iteratively mine for frequent itemsets
     while True:
         k += 1
-        if k > 2:
-            break
 
         candidates = generate_candidate_itemsets(freq_new_level)
         pruned_candidates = prune_candidates(candidates, freq_itemsets)
@@ -142,26 +140,38 @@ def check_itemsets_in_line(line, itemsets):
 
 
 if __name__ == "__main__":
-    client = dask.distributed.Client(n_workers=6, threads_per_worker=2)  # Adjust based on your CPU
-    stopwords_set = set(stopwords.words('english'))
+    # noinspection PyBroadException
+    try:
+        client = dask.distributed.Client(n_workers=6, threads_per_worker=1)  # Adjust based on your CPU
+        stopwords_set = set(stopwords.words('english'))
 
-    #apriori_disk('data/combined.csv', 1)
-    #apriori_disk('data/output_5.csv',0.3)
-    frequent_itemsets = apriori_disk('data/combined_stemmed.csv', stopwords_set, 0.4, "100MB")
-    freq_list = list(frequent_itemsets.keys())
-    with open('data/frequent_itemsets.pkl', 'wb') as f:
-        pickle.dump(frequent_itemsets, f)
+        #apriori_disk('data/combined.csv', 1)
+        #apriori_disk('data/output_5.csv',0.3)
+        frequent_itemsets = apriori_disk('data/combined_stemmed.csv', stopwords_set, 0.4, "30MB")
+        freq_list = list(frequent_itemsets.keys())
+        with open('data/frequent_itemsets.pkl', 'wb') as f:
+            pickle.dump(frequent_itemsets, f)
 
-    #worried that this variable is actually too big, maybe I need to save it to .txt line by line instead
-    itemset_features = check_itemsets('data/combined_stemmed.csv', freq_list, "100MB")
-    #print(itemset_features)
-    #print(type(itemset_features))
-    #print(itemset_features.__sizeof__())
-    with open('data/itemset_features.pkl', 'wb') as f:
-        pickle.dump(itemset_features, f)
+        #worried that this variable is actually too big, maybe I need to save it to .txt line by line instead
+        itemset_features = check_itemsets('data/combined_stemmed.csv', freq_list, "30MB")
+        #print(itemset_features)
+        #print(type(itemset_features))
+        #print(itemset_features.__sizeof__())
+        with open('data/itemset_features.pkl', 'wb') as f:
+            pickle.dump(itemset_features, f)
 
-    with open('log.txt', 'w') as f:
-        now = datetime.datetime.now()
-        f.write(now.strftime("%Y-%m-%d %H:%M:%S"))
+        with open('log.txt', 'w') as f:
+            now = datetime.datetime.now()
+            f.write(now.strftime("%Y-%m-%d %H:%M:%S"))
 
-    os.system('shutdown -s -t 0')
+        os.system('shutdown -s -t 0')
+    except KeyboardInterrupt as e:
+        exit()
+    except Exception as e:
+        with open('log.txt', 'w') as f:
+            now = datetime.datetime.now()
+            f.write(now.strftime("%Y-%m-%d %H:%M:%S"))
+            f.write("\n")
+            f.write(str(e))
+        os.system('shutdown -s -t 0')
+
