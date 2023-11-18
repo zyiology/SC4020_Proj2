@@ -1,2 +1,23 @@
-2023-11-17 01:25:05
-Attempted to run task ('bag-from-delayed-decode-read-block-check_itemsets_in_line-2ef24e568e0b5d53b15ac73ad33fdb25', 10) on 3 different workers, but all those workers died while running it. The last worker that attempt to run the task was tcp://127.0.0.1:51288. Inspecting worker logs is often a good next step to diagnose what went wrong. For more information see https://distributed.dask.org/en/stable/killed.html.
+2023-11-18 18:26:35
+Metadata inference failed in `valid_candidate_df`.
+
+You have supplied a custom function and Dask is unable to 
+determine the type of output that that function returns. 
+
+To resolve this please provide a meta= keyword.
+The docstring of the Dask function you ran should have more information.
+
+Original error is below:
+------------------------
+TypeError('the JSON object must be str, bytes or bytearray, not Future')
+
+Traceback:
+---------
+  File "C:\Users\zyiol\.conda\envs\SC4020\lib\site-packages\dask\dataframe\utils.py", line 193, in raise_on_meta_error
+    yield
+  File "C:\Users\zyiol\.conda\envs\SC4020\lib\site-packages\dask\dataframe\core.py", line 6876, in _emulate
+    return func(*_extract_meta(args, True), **_extract_meta(kwargs, True))
+  File "C:\Users\zyiol\PycharmProjects\SC4020\proj2\apriori_general.py", line 155, in valid_candidate_df
+    freq_itemsets = [frozenset(lst) for lst in json.loads(itemsets_json)]
+  File "C:\Users\zyiol\.conda\envs\SC4020\lib\json\__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
