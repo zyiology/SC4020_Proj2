@@ -106,7 +106,7 @@ if __name__ == "__main__":
         # for feat in my_itemset_features:
         #     print(feat)
         print("no of dimensions: ", my_itemset_features[0].size)
-        exit()
+
 
     # if (type(my_itemset_features)==list):
     #     my_csr_matrix = vstack([csr_matrix(arr) for arr in my_itemset_features])
@@ -121,7 +121,10 @@ if __name__ == "__main__":
     # Perform bisecting k-means
     #my_cluster_labels = bisecting_kmeans(my_itemset_features, my_num_clusters)
 
-    my_cluster_labels = sph_kmeans(csr_matrix(my_itemset_features), my_num_clusters)
+    itemset_matrix = csr_matrix(my_itemset_features.astype(int))
+
+
+    my_cluster_labels = sph_kmeans(itemset_matrix, my_num_clusters)
 
     print(my_cluster_labels)
 

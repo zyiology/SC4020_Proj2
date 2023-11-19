@@ -337,6 +337,8 @@ if __name__ == "__main__":
 
     # noinspection PyBroadException
     try:
+
+        #setup stuff
         client = dask.distributed.Client(n_workers=6, threads_per_worker=1)  # Adjust based on your CPU
         nltk_stopwords = stopwords.words('english')
         with open('additional_stopwords.txt', 'r') as file:
@@ -347,26 +349,21 @@ if __name__ == "__main__":
 
         porter_stemmer = PorterStemmer()
         extra_stopwords_stemmed = [porter_stemmer.stem(word) for word in extra_stopwords]
-
         stopwords_set = set(extra_stopwords_stemmed)
 
-
-        #stopwords_set = set(stopwords.words('english'))
         data = 'data/combined_stemmed.csv'
         # data = 'data/pruned.csv'
         block_size = "100MB"
 
+        # run the apriori disk function
         frequent_itemsets, string_mapping = apriori_disk(data_file=data,
                                                          exclude=stopwords_set,
                                                          min_support_percent=.17,
                                                          blocksize=block_size)
 
+        # if function returns nothing, don't need to continue
         if not frequent_itemsets or not string_mapping:
             exit()
-
-        freq_itemsets_list = list(frequent_itemsets.keys())
-        with open('data/frequent_itemsets.pkl', 'wb') as f:
-            pickle.dump(frequent_itemsets, f)
 
         # if you want to recreate the list with the original strings
         for freq_itemset, support in frequent_itemsets.items():
@@ -374,8 +371,15 @@ if __name__ == "__main__":
             reconstructed_strings = set(key for key, value in string_mapping.items() if value in freq_itemset)
             print(reconstructed_strings, ":", str(support))
 
-        #worried that this variable is actually too big, maybe I need to save it to .txt line by line instead
+        # the frequent itemsets are the keys of the frequent_itemsets dictionary
+        freq_itemsets_list = list(frequent_itemsets.keys())
+
+        # for clustering purposes, find if each itemset is present in each line
         itemset_features = check_itemsets(data, freq_itemsets_list, string_mapping, block_size)
+
+        # save all variables so don't need to re-run script + for clustering
+        with open('data/frequent_itemsets.pkl', 'wb') as f:
+            pickle.dump(frequent_itemsets, f)
 
         with open('data/itemset_features.pkl', 'wb') as f:
             pickle.dump(itemset_features, f)
