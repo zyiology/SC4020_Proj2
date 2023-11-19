@@ -1,2 +1,1 @@
-2023-11-17 01:25:05
-Attempted to run task ('bag-from-delayed-decode-read-block-check_itemsets_in_line-2ef24e568e0b5d53b15ac73ad33fdb25', 10) on 3 different workers, but all those workers died while running it. The last worker that attempt to run the task was tcp://127.0.0.1:51288. Inspecting worker logs is often a good next step to diagnose what went wrong. For more information see https://distributed.dask.org/en/stable/killed.html.
+2023-11-19 23:43:15

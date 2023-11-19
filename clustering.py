@@ -106,6 +106,7 @@ if __name__ == "__main__":
         # for feat in my_itemset_features:
         #     print(feat)
         print("no of dimensions: ", my_itemset_features[0].size)
+        exit()
 
     # if (type(my_itemset_features)==list):
     #     my_csr_matrix = vstack([csr_matrix(arr) for arr in my_itemset_features])
