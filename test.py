@@ -44,7 +44,7 @@ import numpy as np
 #
 # combined_data.to_csv('combined_data.csv', index=False)
 
-combined_data = 'data/combined.csv'
+# combined_data = 'data/combined.csv'
 # pruned = 'data/pruned.csv'
 #
 # with open(combined_data, 'r') as f:
@@ -53,12 +53,40 @@ combined_data = 'data/combined.csv'
 #             f2.write(row)
 #             if i>2500:
 #                 break
-
-with open(combined_data, 'r') as f:
-    row_count = sum(1 for row in f if '|' in row)
-    print("no rows: ", row_count)
+# #
+# with open(combined_data, 'r') as f:
+#     row_count = sum(1 for row in f if '|' in row)
+#     print("no rows: ", row_count)
 # import datetime
 # with open('log.txt', 'w') as f:
 #     now = datetime.datetime.now()
 #     f.write(now.strftime("%Y-%m-%d %H:%M:%S"))
 
+import pickle
+with open('data/itemset_features.pkl', 'rb') as f:
+    my_itemset_features = pickle.load(f)
+    # for feat in my_itemset_features:
+    #     print(feat)
+    print("no of dimensions: ", my_itemset_features[0].size)
+    print(my_itemset_features[0])
+
+with open('data/frequent_itemsets.pkl', 'rb') as f:
+    itemsets = pickle.load(f)
+    print(itemsets)
+
+with open('data/string_mapping.pkl', 'rb') as f:
+    string_mapping = pickle.load(f)
+    print(string_mapping)
+#
+# import dask.bag as db
+#
+# data_file = 'data/combined_stemmed.csv'
+# blocksize = "100MB"
+# text = db.read_text(data_file, blocksize=blocksize)
+# print(text.npartitions)
+
+# itemsets_list = ['test']
+# total_pairs = [(itemsets_list[i], itemsets_list[j]) for i in range(len(itemsets_list)) for j in
+#                    range(i + 1, len(itemsets_list))]
+#
+# print(len(total_pairs))

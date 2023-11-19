@@ -141,6 +141,7 @@ def combine_counts(count1, count2):
 def valid_candidate(pairs, itemsets_json):
     freq_itemsets = [frozenset(lst) for lst in json.loads(itemsets_json)]
     new_candidates = set()
+
     for pair in pairs:
         itemset1, itemset2 = pair
         new_candidate = itemset1.union(itemset2)
@@ -151,55 +152,34 @@ def valid_candidate(pairs, itemsets_json):
     return new_candidates
 
 
-def valid_candidate_df(pairs_df, itemsets_json, k):
-    freq_itemsets = [frozenset(lst) for lst in json.loads(itemsets_json)]
-    new_candidates = set()
-    def union_sets(row):
-        return row.iloc[:,0].union(row.iloc[:,1])
-    pairs_df['new_candidate'] = pairs_df.apply(union_sets, axis=1)
-
-    def eval_candidate(candidate):
-        if len(candidate) != k+1:
-            return False
-        for subset in map(frozenset, itertools.combinations(candidate, k)):
-            if subset not in freq_itemsets:
-                return False
-        return True
-
-    return pairs_df[pairs_df.apply(lambda row: eval_candidate(row['new_candidate']), axis=1)]
-
-
 def generate_candidate_itemsets(freq_itemsets, num_sublists=6):
     print('generating candidates')
     itemsets_list = list(freq_itemsets)
-    ddf = dd.from_pandas(pd.DataFrame([(itemsets_list[i], itemsets_list[j]) for i in range(len(itemsets_list)) for j in
-                   range(i + 1, len(itemsets_list))]), npartitions=12)
+    total_pairs = [(itemsets_list[i], itemsets_list[j]) for i in range(len(itemsets_list)) for j in
+                   range(i + 1, len(itemsets_list))]
 
     item_sets_json = json.dumps(itemsets_list, default=serialize_frozenset)
     item_sets_future = client.scatter(item_sets_json, broadcast=True)
-    meta = pd.DataFrame([frozenset("meta")])
-    print('mapping...')
-    results = ddf.map_partitions(valid_candidate_df, item_sets_future, len(freq_itemsets[0])).compute()
-    print('mapping done!')
-    return list(results['new_candidate'])
 
+    # Split the list into sublists
+    sublist_size = len(total_pairs) // num_sublists
+    sublists = [total_pairs[i:i + sublist_size] for i in range(0, len(total_pairs), sublist_size)]
+    print("total_pairs size: ", str(total_pairs.__sizeof__()))
 
-    # # Split the list into sublists
-    # sublist_size = len(total_pairs) // num_sublists
-    # sublists = [total_pairs[i:i + sublist_size] for i in range(0, len(total_pairs), sublist_size)]
-    #
-    # print('pre-map')
+    print('pre-map')
+    futures = client.map(valid_candidate, sublists, itemsets_json=item_sets_future)
+    print('map')
     # futures = []
     # for sublist in sublists:
-    #     future = client.scatter(sublist)
-    #     futures.append(client.submit(valid_candidate, future, freq_itemsets))
-    #
+    #     future = client.submit(valid_candidate, sublist, freq_itemsets)
+    #     futures.append(future)
+
     # print('map')
-    # candidate_itemsets = set()
-    # for future in dask.distributed.as_completed(futures):
-    #     print('a')
-    #     candidate_itemsets.update(future.result())
-    #     print('b')
+    candidate_itemsets = set()
+    for future in dask.distributed.as_completed(futures):
+        print('a')
+        candidate_itemsets.update(future.result())
+        print('b')
 
     # Create a masterlist of Dask bags
     # masterlist = db.from_sequence(total_pairs, npartitions=6)
@@ -216,7 +196,7 @@ def generate_candidate_itemsets(freq_itemsets, num_sublists=6):
     # #    candidate_itemsets.update(batch)
     #
     #
-    # return candidate_itemsets
+    return candidate_itemsets
 ## END DASK VERSION OF GENERATE CANDIDATES
 
 # def generate_candidate_itemsets(freq_itemsets):
