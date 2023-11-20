@@ -44,15 +44,15 @@ import numpy as np
 #
 # combined_data.to_csv('combined_data.csv', index=False)
 
-# combined_data = 'data/combined.csv'
-# pruned = 'data/pruned.csv'
-#
-# with open(combined_data, 'r') as f:
-#     with open(pruned, 'w') as f2:
-#         for i,row in enumerate(f):
-#             f2.write(row)
-#             if i>2500:
-#                 break
+combined_data = 'data/combined_stemmed.csv'
+pruned = 'data/pruned_stemmed.csv'
+
+with open(combined_data, 'r') as f:
+    with open(pruned, 'w') as f2:
+        for i,row in enumerate(f):
+            f2.write(row)
+            if i>2500:
+                break
 # #
 # with open(combined_data, 'r') as f:
 #     row_count = sum(1 for row in f if '|' in row)

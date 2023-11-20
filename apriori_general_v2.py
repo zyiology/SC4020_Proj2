@@ -1,18 +1,14 @@
-import os
 import dask.distributed
 import pandas as pd
-from nltk.corpus import stopwords, words
+from nltk.corpus import stopwords
 import dask.bag as db
 from collections import defaultdict
 import numpy as np
 import pickle
 import datetime
 import dask.dataframe as dd
-import json
-import itertools
 from nltk.stem import PorterStemmer
 import traceback
-
 
 
 # main function to execute disk-based apriori algorithm
@@ -20,9 +16,8 @@ import traceback
 # exclude: set of items (strings) to exclude
 # min_support_percent: from 0 to 1, what % of support is required
 # blocksize: text file will be broken into chunks to process, this determines size of chunk
-
-#should accept a client too!!!
-def apriori_disk(data_file, exclude, min_support_percent, blocksize):
+# client: the dask client to use
+def apriori_disk(data_file, exclude, min_support_percent, blocksize, client):
 
     # count the number of rows needed to fulfil the min_support_percent
     with open(data_file, 'r') as f:
@@ -52,7 +47,7 @@ def apriori_disk(data_file, exclude, min_support_percent, blocksize):
         prev_freq = list(freq_new_level.keys())
 
         print('generating candidates')
-        candidates = generate_candidate_itemsets(prev_freq)
+        candidates = generate_candidate_itemsets(prev_freq, client)
         print(f'{len(candidates)} candidates generated')
 
         #pruned_candidates = prune_candidates(candidates, prev_freq)
@@ -64,7 +59,8 @@ def apriori_disk(data_file, exclude, min_support_percent, blocksize):
         # print(candidates)
 
         print("checking frequency of itemsets...")
-        freq_new_level = get_frequent_item_sets(data_file, candidates, string_to_integer_future, min_support, blocksize)
+        freq_new_level = get_frequent_item_sets(data_file, candidates, string_to_integer_future,
+                                                min_support, blocksize, client)
 
         # if no new frequent itemsets at this level, stop mining
         if not freq_new_level:
@@ -119,7 +115,7 @@ def count_itemsets_in_line_first_pass(line, exclude):
     return item_count
 
 
-def get_frequent_item_sets(data_file, item_sets, string_to_integer, min_support, blocksize):
+def get_frequent_item_sets(data_file, item_sets, string_to_integer, min_support, blocksize, client):
 
     text_ddf = dd.read_csv(data_file, sep='|', header=None, names=['line'], blocksize=blocksize)
     # text = db.read_text(data_file, blocksize=blocksize)
@@ -201,7 +197,7 @@ def valid_candidate(pairs, itemsets_set_bytes):
     # return new_candidates
 
 
-def generate_candidate_itemsets(itemsets_list:list, num_sublists=6):
+def generate_candidate_itemsets(itemsets_list:list, client, num_sublists=6):
     total_pairs = [(itemsets_list[i], itemsets_list[j]) for i in range(len(itemsets_list)) for j in
                    range(i + 1, len(itemsets_list))]
 
@@ -277,7 +273,7 @@ def prune_candidates(candidates, freq_itemsets):
 
 # used after all frequent itemsets have been obtained, find which frequent itemsets each line possesses
 # and save into a vector - all vectors stored in an overall list
-def check_itemsets(data_file, itemsets, string_to_integer, blocksize):
+def check_itemsets(data_file, itemsets, string_to_integer, blocksize, client):
     bag = db.read_text(data_file, blocksize=blocksize)
 
     delayed = bag.to_delayed()
@@ -339,7 +335,7 @@ if __name__ == "__main__":
     try:
 
         #setup stuff
-        client = dask.distributed.Client(n_workers=6, threads_per_worker=1)  # Adjust based on your CPU
+        dask_client = dask.distributed.Client(n_workers=6, threads_per_worker=1)  # Adjust based on your CPU
         nltk_stopwords = stopwords.words('english')
         with open('additional_stopwords.txt', 'r') as file:
             extra_stopwords = [line.strip() for line in file.readlines()]
@@ -359,7 +355,8 @@ if __name__ == "__main__":
         frequent_itemsets, string_mapping = apriori_disk(data_file=data,
                                                          exclude=stopwords_set,
                                                          min_support_percent=.17,
-                                                         blocksize=block_size)
+                                                         blocksize=block_size,
+                                                         client=dask_client)
 
         # if function returns nothing, don't need to continue
         if not frequent_itemsets or not string_mapping:
@@ -375,7 +372,7 @@ if __name__ == "__main__":
         freq_itemsets_list = list(frequent_itemsets.keys())
 
         # for clustering purposes, find if each itemset is present in each line
-        itemset_features = check_itemsets(data, freq_itemsets_list, string_mapping, block_size)
+        itemset_features = check_itemsets(data, freq_itemsets_list, string_mapping, block_size, dask_client)
 
         # save all variables so don't need to re-run script + for clustering
         with open('data/frequent_itemsets.pkl', 'wb') as f:
