@@ -13,33 +13,19 @@ from soyclustering import SphericalKMeans
 from scipy.sparse import csr_matrix, vstack
 
 
-def visualize_clusters(cluster_labels, itemset_features):
+def visualize_clusters(cluster_labels, itemset_features, metric):
     # Assuming `cluster_labels` and `itemset_features` are from your previous clustering
     num_clusters = len(set(cluster_labels))
 
     # Silhouette Analysis
-    silhouette_avg = silhouette_score(itemset_features, cluster_labels)
+    silhouette_avg = silhouette_score(itemset_features, cluster_labels, metric=metric)
     print("For n_clusters =", num_clusters, "The average silhouette_score is :", silhouette_avg)
 
     # Compute the silhouette scores for each sample
-    sample_silhouette_values = silhouette_samples(itemset_features, cluster_labels)
-
-    # 2D Visualization
-    pca = PCA(n_components=2)
-    reduced_features = pca.fit_transform(itemset_features)
-
-    plt.figure(figsize=(10, 6))
-    for i in range(num_clusters):
-        # Separate out the data based on cluster labels
-        cluster_i = reduced_features[cluster_labels == i]
-        plt.scatter(cluster_i[:, 0], cluster_i[:, 1], label=f'Cluster {i}')
-
-    plt.title("Cluster visualization in 2D using PCA")
-    plt.legend()
-    plt.show()
+    sample_silhouette_values = silhouette_samples(itemset_features, cluster_labels, metric=metric)
 
     # Silhouette plot
-    fig, ax1 = plt.subplots(1, 1)
+    fig, ax1 = plt.subplots(1, 1, figsize=(10, 6))
     ax1.set_xlim([-0.1, 1])
     ax1.set_ylim([0, len(itemset_features) + (num_clusters + 1) * 10])
 
@@ -72,6 +58,22 @@ def visualize_clusters(cluster_labels, itemset_features):
     ax1.set_xticks([-0.1, 0, 0.2, 0.4, 0.6, 0.8, 1])
 
     plt.show()
+
+    do_pca = False
+    if do_pca:
+        # 2D Visualization
+        pca = PCA(n_components=2)
+        reduced_features = pca.fit_transform(itemset_features)
+
+        plt.figure(figsize=(10, 6))
+        for i in range(num_clusters):
+            # Separate out the data based on cluster labels
+            cluster_i = reduced_features[cluster_labels == i]
+            plt.scatter(cluster_i[:, 0], cluster_i[:, 1], label=f'Cluster {i}')
+
+        plt.title("Cluster visualization in 2D using PCA")
+        plt.legend()
+        plt.show()
     return
 
 
@@ -122,8 +124,6 @@ if __name__ == "__main__":
     #my_cluster_labels = bisecting_kmeans(my_itemset_features, my_num_clusters)
 
     itemset_matrix = csr_matrix(my_itemset_features.astype(int))
-
-
     my_cluster_labels = sph_kmeans(itemset_matrix, my_num_clusters)
 
     print(my_cluster_labels)

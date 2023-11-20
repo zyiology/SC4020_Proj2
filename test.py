@@ -51,7 +51,7 @@ with open(combined_data, 'r') as f:
     with open(pruned, 'w') as f2:
         for i,row in enumerate(f):
             f2.write(row)
-            if i>2500:
+            if i>25000:
                 break
 # #
 # with open(combined_data, 'r') as f:
@@ -62,21 +62,21 @@ with open(combined_data, 'r') as f:
 #     now = datetime.datetime.now()
 #     f.write(now.strftime("%Y-%m-%d %H:%M:%S"))
 
-import pickle
-with open('data/itemset_features.pkl', 'rb') as f:
-    my_itemset_features = pickle.load(f)
-    # for feat in my_itemset_features:
-    #     print(feat)
-    print("no of dimensions: ", my_itemset_features[0].size)
-    print(my_itemset_features[0])
-
-with open('data/frequent_itemsets.pkl', 'rb') as f:
-    itemsets = pickle.load(f)
-    print(itemsets)
-
-with open('data/string_mapping.pkl', 'rb') as f:
-    string_mapping = pickle.load(f)
-    print(string_mapping)
+# import pickle
+# with open('data/itemset_features.pkl', 'rb') as f:
+#     my_itemset_features = pickle.load(f)
+#     # for feat in my_itemset_features:
+#     #     print(feat)
+#     print("no of dimensions: ", my_itemset_features[0].size)
+#     print(my_itemset_features[0])
+#
+# with open('data/frequent_itemsets.pkl', 'rb') as f:
+#     itemsets = pickle.load(f)
+#     print(itemsets)
+#
+# with open('data/string_mapping.pkl', 'rb') as f:
+#     string_mapping = pickle.load(f)
+#     print(string_mapping)
 #
 # import dask.bag as db
 #
