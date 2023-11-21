@@ -9,11 +9,11 @@ from sklearn.metrics import silhouette_samples, silhouette_score
 from sklearn.cluster import KMeans
 from sklearn.metrics.pairwise import cosine_similarity
 from scipy.spatial.distance import cosine
-from soyclustering import SphericalKMeans
+from soyclustering import SphericalKMeans, visualize_pairwise_distance
 from scipy.sparse import csr_matrix, vstack
 
 
-def visualize_clusters(cluster_labels, itemset_features, metric):
+def visualize_silhouette_clusters(cluster_labels, itemset_features, metric):
     # Assuming `cluster_labels` and `itemset_features` are from your previous clustering
     num_clusters = len(set(cluster_labels))
 
@@ -58,23 +58,23 @@ def visualize_clusters(cluster_labels, itemset_features, metric):
     ax1.set_xticks([-0.1, 0, 0.2, 0.4, 0.6, 0.8, 1])
 
     plt.show()
-
-    do_pca = False
-    if do_pca:
-        # 2D Visualization
-        pca = PCA(n_components=2)
-        reduced_features = pca.fit_transform(itemset_features)
-
-        plt.figure(figsize=(10, 6))
-        for i in range(num_clusters):
-            # Separate out the data based on cluster labels
-            cluster_i = reduced_features[cluster_labels == i]
-            plt.scatter(cluster_i[:, 0], cluster_i[:, 1], label=f'Cluster {i}')
-
-        plt.title("Cluster visualization in 2D using PCA")
-        plt.legend()
-        plt.show()
     return
+
+# do_pca = False
+#     if do_pca:
+#         # 2D Visualization
+#         pca = PCA(n_components=2)
+#         reduced_features = pca.fit_transform(itemset_features)
+#
+#         plt.figure(figsize=(10, 6))
+#         for i in range(num_clusters):
+#             # Separate out the data based on cluster labels
+#             cluster_i = reduced_features[cluster_labels == i]
+#             plt.scatter(cluster_i[:, 0], cluster_i[:, 1], label=f'Cluster {i}')
+#
+#         plt.title("Cluster visualization in 2D using PCA")
+#         plt.legend()
+#         plt.show()
 
 
 def cosine_kmeans(x, n_clusters):
