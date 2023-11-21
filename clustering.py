@@ -11,6 +11,29 @@ from sklearn.metrics.pairwise import cosine_similarity
 from scipy.spatial.distance import cosine
 from soyclustering import SphericalKMeans, visualize_pairwise_distance
 from scipy.sparse import csr_matrix, vstack
+from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
+from sklearn.metrics import homogeneity_score, completeness_score, v_measure_score
+from sklearn.metrics import silhouette_score, confusion_matrix
+
+
+def compare_true_labels(true_labels, predicted_labels, data):
+    # Assuming you have two numpy arrays: 'true_labels' and 'cluster_labels'
+    ari = adjusted_rand_score(true_labels, predicted_labels)
+    nmi = normalized_mutual_info_score(true_labels, predicted_labels)
+    homogeneity = homogeneity_score(true_labels, predicted_labels)
+    completeness = completeness_score(true_labels, predicted_labels)
+    v_measure = v_measure_score(true_labels, predicted_labels)
+    # silhouette_score requires the original data, 'X', along with the cluster labels
+    silhouette = silhouette_score(data, predicted_labels, metric='cosine')
+
+    # Print or store the results
+    print("Adjusted Rand Index:", ari)
+    print("Normalized Mutual Information:", nmi)
+    print("Homogeneity:", homogeneity)
+    print("Completeness:", completeness)
+    print("V-Measure:", v_measure)
+    print("Silhouette Score:", silhouette)
+    return
 
 
 def visualize_silhouette_clusters(cluster_labels, itemset_features, metric):

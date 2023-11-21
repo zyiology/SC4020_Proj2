@@ -32,7 +32,7 @@ def apriori_disk(data_file, exclude, min_support_percent, blocksize, client):
 
     if not string_to_integer or not freq_itemsets:
         print('No frequent itemsets found')
-        return
+        return None, None
 
     string_to_integer_future = client.scatter(string_to_integer, broadcast=True)
     freq_new_level = freq_itemsets.copy()
@@ -110,7 +110,7 @@ def count_itemsets_in_line_first_pass(line, exclude):
 
     for item in line.split(','):
 
-        if item not in exclude:
+        if exclude is None or item not in exclude:
             item_count[item] += 1  # in here, item is a string
     return item_count
 
