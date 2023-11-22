@@ -4,6 +4,9 @@ import pickle
 
 df = pd.read_csv('data/online_retail_II.csv')
 
+print(set(df['Price']))
+exit()
+
 # columns: 'Invoice', 'StockCode', 'Description', 'Quantity', 'InvoiceDate',
 #        'Price', 'Customer ID', 'Country'
 

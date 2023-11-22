@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from nltk.stem import PorterStemmer
 import re
 
+
 from sklearn.datasets import fetch_20newsgroups
 raw_posts = fetch_20newsgroups(remove=('headers', 'footers', 'quotes'))
 porter_stemmer = PorterStemmer()
