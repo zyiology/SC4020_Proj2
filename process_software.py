@@ -36,7 +36,7 @@ def get_unique_stemmed_words(text, dictionary):
     return list(filtered_words)
 
 ratings = []
-with open('data/reviews_transactions.txt', 'w') as f:
+with open('data/appliances_reviews_transactions.txt', 'w') as f:
     for text,rating in zip(review_texts,overall_ratings):
         words = get_unique_stemmed_words(text, english_words)
         if len(words)==0:
@@ -45,7 +45,7 @@ with open('data/reviews_transactions.txt', 'w') as f:
         f.write(line)
         ratings.append(rating)
 
-with open('data/reviews_labels.pkl', 'wb') as f:
+with open('data/appliances_reviews_labels.pkl', 'wb') as f:
     pickle.dump(np.array(ratings), f)
 
 print(len(ratings))
