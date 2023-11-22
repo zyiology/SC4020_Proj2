@@ -33,7 +33,7 @@ def compare_true_labels(true_labels, predicted_labels, data):
     print("Completeness:", completeness)
     print("V-Measure:", v_measure)
     print("Silhouette Score:", silhouette)
-    return
+    return np.array([ari, nmi, homogeneity, completeness, v_measure, silhouette])
 
 
 def visualize_silhouette_clusters(cluster_labels, itemset_features, metric):
