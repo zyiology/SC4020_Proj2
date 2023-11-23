@@ -14,6 +14,7 @@ from scipy.sparse import csr_matrix, vstack
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 from sklearn.metrics import homogeneity_score, completeness_score, v_measure_score
 from sklearn.metrics import silhouette_score, confusion_matrix
+from skopt.space import transformers
 
 
 def compare_true_labels(true_labels, predicted_labels, data):
